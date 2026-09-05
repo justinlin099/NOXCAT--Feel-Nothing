@@ -142,7 +142,7 @@ Production 必須使用 HTTPS，相機 API 才能在非 localhost 環境運作�
 
 - GitHub repository：<https://github.com/justinlin099/NOXCAT--Feel-Nothing>
 - 作品展示網址：https://noxcat-dev.hex.tw/
-- 評選影片：**【待填：YouTube／雲端影片網址】**
+- 評選影片：https://www.youtube.com/watch?v=7g47J8MZPAo
 
 | 開始頁 | 戰鬥畫面 | 結果頁 |
 | :---: | :---: | :---: |
