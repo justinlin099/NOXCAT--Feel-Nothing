@@ -12,7 +12,7 @@ import type { BattleResultDetail } from '../game/scenes/BattleScene';
 import { AudioSystem } from '../game/systems/AudioSystem';
 import { formatSeconds, requireElement, setSafeText } from './dom';
 import { presentResultScreen } from './resultScreen';
-import { noxcatSvg } from '../assets/noxcatDesign';
+import { mountOutfitPicker } from './outfitPicker';
 
 const QUICK_ANNOYANCES = ['需求一直改', '程式 Bug', '星期一', '已讀不回'] as const;
 
@@ -58,6 +58,13 @@ export class AppController {
     this.root.innerHTML = `
       <main class="screen start-screen" aria-labelledby="game-title">
         <div class="scanlines" aria-hidden="true"></div>
+        <button class="sound-toggle" type="button" data-testid="sound-toggle" aria-label="配樂與音效" aria-pressed="${this.soundEnabled}" title="${this.soundEnabled ? '關閉配樂與音效' : '開啟配樂與音效'}">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M11 4 6 8H3v8h3l5 4Z" />
+            <path class="sound-waves" d="M15 8a6 6 0 0 1 0 8m3-11a10 10 0 0 1 0 14" />
+            <path class="sound-muted" d="m16 9 6 6m0-6-6 6" />
+          </svg>
+        </button>
         <header class="brand-lockup">
           <p class="eyebrow">FEEL NOTHING. DO EVERYTHING.</p>
           <h1 id="game-title" class="game-title" tabindex="-1">
@@ -66,23 +73,12 @@ export class AppController {
           </h1>
           <p class="tagline">你的煩惱是 BOSS；<br><strong>NOXCAT 自己就是果凍砲彈。</strong></p>
         </header>
-        <div class="start-visual" aria-hidden="true">
-          <img class="start-boss-ghost" src="/assets/boss/boss-office-base-v1.png" alt="" />
-          <div class="css-noxcat">${noxcatSvg()}</div>
-        </div>
+        <section class="outfit-picker" aria-label="NOXCAT 造型預覽"></section>
         <form class="annoyance-form" data-testid="start-form">
           <label for="annoyance">今天最想打敗的是？</label>
           <div class="input-shell"><input id="annoyance" name="annoyance" autocomplete="off" inputmode="text" aria-describedby="annoyance-help" placeholder="輸入今天最煩的事…" /></div>
           <span id="annoyance-help" class="sr-only">最多輸入 80 個 Unicode 字元；留白時會使用「需求一直改」。</span>
           <div class="quick-options" role="group" aria-label="快速選項"></div>
-          <div class="secondary-options">
-            <label class="accessory-toggle">
-              <input id="goggles-enabled" data-testid="goggles-enabled" type="checkbox"${this.gogglesVisible ? ' checked' : ''} />
-              <span class="toggle" aria-hidden="true"></span>
-              <b>配戴額前護目鏡</b>
-            </label>
-            <label class="sound-row"><input id="sound-enabled" type="checkbox" checked /> 配樂與音效</label>
-          </div>
           <button class="primary-button" type="submit" data-testid="generate-boss">生成我的 BOSS <span>→</span></button>
         </form>
       </main>
@@ -91,12 +87,15 @@ export class AppController {
 
     const input = requireElement<HTMLInputElement>(this.root, '#annoyance');
     const quickOptions = requireElement<HTMLDivElement>(this.root, '.quick-options');
-    const gogglesInput = requireElement<HTMLInputElement>(this.root, '#goggles-enabled');
-    const gogglesPreview = requireElement<SVGElement>(this.root, '.css-goggles');
-    const syncGogglesPreview = (): void => {
-      gogglesPreview.setAttribute('visibility', gogglesInput.checked ? 'visible' : 'hidden');
-    };
-    gogglesInput.addEventListener('change', syncGogglesPreview);
+    mountOutfitPicker(requireElement<HTMLElement>(this.root, '.outfit-picker'));
+    const soundToggle = requireElement<HTMLButtonElement>(this.root, '[data-testid="sound-toggle"]');
+    soundToggle.addEventListener('click', () => {
+      this.soundEnabled = !this.soundEnabled;
+      this.uiAudio.setEnabled(this.soundEnabled);
+      soundToggle.setAttribute('aria-pressed', String(this.soundEnabled));
+      soundToggle.title = this.soundEnabled ? '關閉配樂與音效' : '開啟配樂與音效';
+      if (this.soundEnabled) void this.uiAudio.unlock().then(() => this.uiAudio.play('homeSelect'));
+    });
     input.addEventListener('input', () => {
       const characters = Array.from(input.value);
       if (characters.length > 80) input.value = characters.slice(0, 80).join('');
@@ -105,7 +104,6 @@ export class AppController {
         chip.setAttribute('aria-pressed', 'false');
       });
     });
-    syncGogglesPreview();
     for (const option of QUICK_ANNOYANCES) {
       const button = document.createElement('button');
       button.type = 'button';
@@ -131,8 +129,6 @@ export class AppController {
       // Neutral mode is the standard flow. Camera access is still requested
       // only after the player reads the on-device privacy disclosure.
       this.wantsCamera = true;
-      this.soundEnabled = requireElement<HTMLInputElement>(this.root, '#sound-enabled').checked;
-      this.gogglesVisible = gogglesInput.checked;
       void this.compileBoss();
     });
     if (restoreFocus) {
@@ -489,9 +485,11 @@ export class AppController {
   };
 
   private playButtonCue(target: EventTarget | null): void {
-    if (!(target instanceof Element) || !target.closest('button')) return;
-    const checkbox = this.root.querySelector<HTMLInputElement>('#sound-enabled');
-    this.uiAudio.setEnabled(checkbox?.checked ?? this.soundEnabled);
+    if (!(target instanceof Element)) return;
+    const button = target.closest('button');
+    // The sound toggle handles its own cue after changing the mute state.
+    if (!button || button.disabled || button.matches('[data-testid="sound-toggle"]')) return;
+    this.uiAudio.setEnabled(this.soundEnabled);
     const cue = target.closest('.start-screen') ? 'homeSelect' : 'button';
     void this.uiAudio.unlock().then(() => this.uiAudio.play(cue));
   }

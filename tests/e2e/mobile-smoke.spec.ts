@@ -58,8 +58,12 @@ test('the layered SVG character fits the start screen and battle', async ({ page
   test.skip(testInfo.project.name !== 'mobile-chromium', '390x844 character and layout coverage');
   await page.goto('/?debug=1&demo=off');
 
-  await expect(page.getByTestId('goggles-enabled')).toBeChecked();
+  await expect(page.getByTestId('goggles-enabled')).toHaveCount(0);
+  await expect(page.locator('#sound-enabled')).toHaveCount(0);
+  await expect(page.getByTestId('sound-toggle')).toHaveAttribute('aria-label', '配樂與音效');
+  await expect(page.getByTestId('sound-toggle')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.css-noxcat')).toBeVisible();
+  await expect(page.locator('.css-noxcat .css-goggles')).toBeVisible();
   const screenBox = await page.locator('.start-screen').boundingBox();
   const formBox = await page.getByTestId('start-form').boundingBox();
   if (!screenBox || !formBox) throw new Error('Start screen does not have measurable bounds');

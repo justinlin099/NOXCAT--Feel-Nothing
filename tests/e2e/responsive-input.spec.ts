@@ -11,10 +11,13 @@ test('small phone can reach the primary action without horizontal overflow', asy
   await expect(page.locator('html')).toHaveAttribute('lang', 'zh-Hant-TW');
   await expect(page.getByRole('textbox', { name: '今天最想打敗的是？' })).toBeVisible();
   await expect(page.locator('#camera-enabled')).toHaveCount(0);
-  await expect(page.getByRole('checkbox', { name: '配戴額前護目鏡' })).toBeChecked();
+  await expect(page.getByRole('checkbox', { name: '配戴額前護目鏡' })).toHaveCount(0);
   await expect(page.locator('.css-noxcat')).toBeVisible();
-  await expect(page.getByRole('checkbox', { name: '配樂與音效' })).toBeChecked();
-  await expectMinimumTargetSize(page, 'button, .accessory-toggle, .sound-row');
+  await expect(page.locator('.css-noxcat .css-goggles')).toBeVisible();
+  await expect(page.getByRole('checkbox', { name: '配樂與音效' })).toHaveCount(0);
+  await expect(page.getByTestId('sound-toggle')).toHaveAttribute('aria-label', '配樂與音效');
+  await expect(page.getByTestId('sound-toggle')).toHaveAttribute('aria-pressed', 'true');
+  await expectMinimumTargetSize(page, 'button');
 
   const action = page.getByTestId('generate-boss');
   await action.scrollIntoViewIfNeeded();
@@ -119,8 +122,25 @@ test('keyboard focus is visible and quick choices expose their selected state', 
   test.skip(testInfo.project.name !== 'desktop-chromium', 'Desktop keyboard navigation coverage');
   await page.goto('/');
   await page.keyboard.press('Tab');
+  await expect(page.getByTestId('sound-toggle')).toBeFocused();
+  for (const testId of [
+    'outfit-previous',
+    'outfit-next',
+    'outfit-select-classic',
+    'outfit-select-headphones',
+    'outfit-select-beanie',
+    'outfit-select-scarf',
+    'outfit-select-visor',
+  ]) {
+    await page.keyboard.press('Tab');
+    await expect(page.getByTestId(testId)).toBeFocused();
+  }
+  await page.keyboard.press('Tab');
   await expect(page.locator('#annoyance')).toBeFocused();
-  await page.getByTestId('quick-程式 Bug').focus();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId('quick-需求一直改')).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByTestId('quick-程式 Bug')).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page.getByTestId('quick-程式 Bug')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.getByTestId('quick-需求一直改')).toHaveAttribute('aria-pressed', 'false');

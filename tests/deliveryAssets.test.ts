@@ -121,12 +121,14 @@ describe('delivery assets', () => {
   });
 
   it('reuses the generated Boss as a subdued grayscale homepage backdrop', async () => {
-    const [controller, styles] = await Promise.all([
+    const [controller, picker, styles] = await Promise.all([
       readFile(path.join(projectRoot, 'src', 'app', 'AppController.ts'), 'utf8'),
+      readFile(path.join(projectRoot, 'src', 'app', 'outfitPicker.ts'), 'utf8'),
       readFile(path.join(projectRoot, 'src', 'styles.css'), 'utf8'),
     ]);
 
-    expect(controller).toContain(
+    expect(controller).toContain('mountOutfitPicker(');
+    expect(picker).toContain(
       '<img class="start-boss-ghost" src="/assets/boss/boss-office-base-v1.png" alt="" />',
     );
     const ghost = cssRule(styles, '.start-boss-ghost');

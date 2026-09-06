@@ -110,8 +110,11 @@ describe('NOXCAT layered SVG character', () => {
     expect(registry).toContain("'noxcat.goggles'");
     expect(registry).toContain('noxcatSvg(layer)');
     expect(registry).not.toMatch(/scene\.load\.image\([^\n]*noxcat-[LR]-(?:front|side)\.png/);
-    expect(app).toContain('goggles-enabled');
+    expect(app).not.toContain('goggles-enabled');
+    expect(app).not.toContain('sound-enabled');
+    expect(app).toContain('data-testid="sound-toggle"');
+    expect(app).toContain('aria-label="配樂與音效"');
     expect(app).toContain('gogglesVisible');
-    expect(app).toContain('${noxcatSvg()}');
+    expect(app).toContain('mountOutfitPicker(');
   });
 });
